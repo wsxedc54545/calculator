@@ -2,24 +2,19 @@
   <div class="calculator">
     <div class="calculator__container">
       <div class="calculator__container__console">
-        <p>{{ this.number }}</p>
+        <p class="ellipsis">{{ this.number }}</p>
       </div>
       <div class="calculator__container__input">
         <button
           v-for="(tokens, index) in buttons"
           :key="index"
+          :class="`${tokens.type}`"
           @click="clickButton(tokens)"
         >
           {{ tokens.token }}
         </button>
       </div>
     </div>
-    <!-- <ul>
-      <li v-for="item in arrayData">
-        {{ item.name }} 有 {{ item.cash }} 元
-        <button @click="storeMoney(item)">儲值</button>
-      </li>
-  </ul> -->
   </div>
 </template>
 
@@ -28,83 +23,173 @@ export default {
   name: 'IndexPage',
   data() {
     return {
-      // buttons: ['1','1','1','1','1','1','1','1','1','1','1','1','1','1','1','1','1','1','1','1'],
       buttons: [
-      { token :'AC'},
-      { token : '←'},
-      { token : '+/-'},
-      { token : '÷'},
-      { token : 7 },
-      { token : 8 },
-      { token : 9 },
-      { token : 'X'},
-      { token : 4 },
-      { token : 5 },
-      { token : 6 },
-      { token : '-'},
-      { token :  1 },
-      { token :  2 },
-      { token :  3 },
-      { token : '+'},
-      { token : '%'},
-      { token :  0 },
-      { token : '.'},
-      { token : '='}],
+      { token :'AC', type: 'operation' },
+      { token : '←', type: 'operation'},
+      { token : '+/-', type: 'operation'},
+      { token : '/', type: 'operation'},
+      { token : 7, type: 'number' },
+      { token : 8, type: 'number' },
+      { token : 9, type: 'number' },
+      { token : '*', type: 'operation'},
+      { token : 4, type: 'number' },
+      { token : 5, type: 'number' },
+      { token : 6, type: 'number' },
+      { token : '-', type: 'operation'},
+      { token :  1, type: 'number' },
+      { token :  2, type: 'number' },
+      { token :  3, type: 'number' },
+      { token : '+', type: 'operation'},
+      { token : '%', type: 'operation'},
+      { token :  0, type: 'number' },
+      { token : '.', type: 'operation'},
+      { token : '=', type: 'operation'}],
       number: '0',
       hasNumber: false,
-      // arrayData: [
-      //   { name: '阿翔', age: 21, cash: 500 },
-      //   { name: '小萱', age: 23, cash: 1000 },
-      //   { name: '漂亮阿姨', age: 30, cash: 5000 }
-      // ],
+      hasfloat: 'false',
+      calc: [],
+    }
+  },
+  head() {
+    return {
+      title: '測試計算機',
     }
   },
   methods: {
     clickButton(tokens) {
-      const type = typeof(tokens.token)
-      console.log(type);
-      if ( type === 'number' && this.hasNumber) {
-        this.number = this.number.concat(String(tokens.token))
-      } else if ( type === 'number') {
+      const temp = tokens.token
+      const isNumber = typeof(temp) === 'number'
+
+      if ( isNumber && !this.hasNumber ) {
+        if ( temp === 0 && this.hasfloat === false && this.calc === [] )
+          return
         this.number = String(tokens.token)
         this.hasNumber = true
-        // console.log();
+      } else if ( isNumber  ) {
+        if ( temp === 0 && this.number.length === 1 )
+          return
+        this.number = this.number.concat(String(temp))
       } else {
-        console.log('gg');
+        switch (temp) {
+          case 'AC':
+            this.resetCal()
+            break;
+          case '←':
+            if( this.number.length > 1)
+              this.number = this.number.slice(0, -1)
+            else
+              this.resetCal()
+            break;
+          case '+/-':
+            this.number = String(this.number*=-1)
+            break;
+          case '%':
+            this.number = String(this.number/=100)
+            break;
+          case '.':
+            if ( this.hasfloat === true )
+              return
+            this.number+='.'
+            this.hasNumber = true
+            this.hasfloat = true
+            break;
+          case '=':
+            if ( !this.hasNumber )
+              return
+            this.calc.push(this.number)
+            this.calculate()
+            break;
+          default:
+            if ( !this.hasNumber )
+              return
+            this.hasNumber = true
+            this.calc.push(this.number)
+            this.calc.push(temp)
+            this.hasNumber = false
+            this.hasfloat = false
+          break;
+        }
       }
     },
-    // storeMoney: function(item) {
-    //     item.cash = item.cash + 500;
-    //     console.log(item);
-    // },
+    resetCal() {
+      this.number = '0' 
+      this.hasNumber = false
+      this.hasfloat = false
+      this.calc = []
+    },
+    calculate (temp) {
+      this.number = String(eval(this.calc.join('')))
+      this.calc = []
+      if (this.isFloat(this.number))
+        this.hasfloat = false
+    },
+    isFloat(n){
+      return !(parseInt(n) < parseFloat(n))
+    }
   }
 }
 </script>
 
 <style lang="scss">
+  body{
+    overflow-y: hidden;
+    overflow-x: hidden;
+  }
   .calculator {
     text-align: center;
     padding-top: 10%;
+    
+    @media (max-width: 768px) {
+      padding-top: 40%;
+    }
     &__container {
       margin: 0 auto;
-      width: 450px;
+      width: 500px;
+      height: 50%;
+      @media (max-width: 768px) {
+        padding-top: 0;
+        width: 50%;
+      }
       &__console {
-        background: #7B7B7B;
+        position: relative;
+        background: #fff;
         height: 90px;
         font-size: 55px;
         text-align: right;
+        border-radius: 40px 40px 0 0;
+        border-bottom:1px solid #939699;
+        @media (max-width: 768px) {
+          border-radius: 20px 20px 0 0;
+        }
         p {
-          margin: 10px 10px 0;
-          padding-top: 20px;
+          font-size: 28px;
+          padding: 8%;
+          overflow: hidden;
+          white-space: nowrap;
+          text-overflow: ellipsis;
+          @media (max-width: 768px) {
+            padding: 20% 2%;
+          }
         }
       }
       &__input {
         display: flex;
         flex-wrap: wrap;
-        // flex-direction: column;
         button {
           width: 25%;
           height: 100px;
+          border: 0;
+          outline: none;
+          background: #fff;
+        }
+        button:hover {
+          background: lightgrey;
+        }
+        @media (max-width: 768px) {
+          button {
+            width: 25%;
+            height: 50px;
+          }
         }
       }
     }
